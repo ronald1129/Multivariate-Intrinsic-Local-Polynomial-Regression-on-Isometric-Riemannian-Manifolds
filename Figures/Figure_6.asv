@@ -1,0 +1,148 @@
+%% Figure 6 
+
+M =CholeskyManifold;
+
+Cdim = 1;   % Num of covariates
+Rdim = 1;   % Regression degree 0 or 1
+pMdim = 1;  % Manifold dimension 3xpMdim
+N = 1000; %100;  % Sample size by test 
+Ntest = 1; % Number of test 
+
+boxplots = 1;
+%y = sym('y');
+l1 = sym('l1');
+l2 = sym('l2');
+Mdim = 3*pMdim;
+eval_option = 'mean';
+noise_level = 0.5; % var
+
+
+%Simulated Regression
+
+[~,~,~,~,~,Estimation] = simualtion_milpr(Cdim,Mdim,Rdim,Ntest,N,eval_option,noise_level);
+S = Estimation.True;
+Sr = Estimation.Noise;
+LLCf = Estimation.LC;
+LLLf = Estimation.LL;
+LLAf = Estimation.LA;
+
+
+%% Log-Cholesky  Rie t-SNE
+if boxplots == 1 || boxplots == 2
+    figure(2)
+    
+    Nsample = N;
+
+    subplot(2,3,1)
+    
+    X = concat_data(S,Sr);
+    X = concat_data(X,LLCf);
+    y = riem_tsne(X,2,5,M);
+    label = [ones(Nsample,1);2*ones(Nsample,1);3*ones(Nsample,1)];
+    gscatter(y(:,1),y(:,2),label,"rkgb",'.',[16 16 16])
+    legend('True Data', 'Data with Noise', 'Estimated Data')
+    xlabel('dim1')
+    ylabel('dim2')
+    title(['Rie t-SNE, Log-Chol, NSample=' num2str(Nsample) ', Mdim=' num2str(pMdim*3)])
+    
+    subplot(2,3,2)
+
+    X = concat_data(S,Sr);
+    X = concat_data(X,LLLf);
+    y2 = riem_tsne(X,2,5,M);
+    label = [ones(Nsample,1);2*ones(Nsample,1);3*ones(Nsample,1)];
+    gscatter(y2(:,1),y2(:,2),label,"rkgb",'.',[16 16 16])
+    legend('True Data', 'Data with Noise', 'Estimated Data')
+    xlabel('dim1')
+    ylabel('dim2')
+    title(['Rie t-SNE, Log-Euc, NSample=' num2str(Nsample) ', Mdim=' num2str(pMdim*3)])
+
+    subplot(2,3,3)
+    X = concat_data(S,Sr);
+    X = concat_data(X,LLAf);
+    y2 = riem_tsne(X,2,5,M);
+    label = [ones(Nsample,1);2*ones(Nsample,1);3*ones(Nsample,1)];
+    gscatter(y2(:,1),y2(:,2),label,"rkgb",'.',[16 16 16])
+    legend('True Data', 'Data with Noise', 'Estimated Data')
+    xlabel('dim1')
+    ylabel('dim2')
+    title(['Rie t-SNE, Aff-Inv, NSample=' num2str(Nsample) ', Mdim=' num2str(pMdim*3)])
+
+    
+
+%% Linear PGA
+    subplot(2,3,4)
+
+    [~,~,N] = size(S);
+    S2 = M.Manipulate.HPD2Chol(S);
+    V1 = M.Manipulate.RiemVecIdentity(S2); 
+    
+    [~,~,N] = size(Sr);
+    Sr2 = M.Manipulate.HPD2Chol(Sr);
+    V2 = M.Manipulate.RiemVecIdentity(Sr2);
+    
+    [~,~,N] = size(LLLf);
+    LLCf2 = M.Manipulate.HPD2Chol(LLCf);
+    V3 = M.Manipulate.RiemVecIdentity(LLCf2);
+    
+    V = [V1,V2,V3];
+    label = [ones(Nsample,1);2*ones(Nsample,1);3*ones(Nsample,1)];
+    y3 = pca(V,"NumComponents",2);
+    
+    gscatter(y3(:,1),y3(:,2),label,"rkgb",'.',[16 16 16])
+    
+    legend('True Data', 'Data with Noise', 'Estimated Data')
+    xlabel('dim1')
+    ylabel('dim2')
+    title(['Liniarized PGA, Log-Chol, NSample='  num2str(Nsample)  ', Mdim=' num2str(pMdim*3)])
+
+   
+    subplot(2,3,5)
+    
+    [~,~,N] = size(S);
+    [~,V1] = levec(S,M);
+    
+    
+    [~,~,N] = size(Sr);
+    [~,V2] = levec(Sr,M);
+   
+    
+    [~,~,N] = size(LLLf);
+    [~,V3] = levec(LLLf,M);
+    
+    V = [V1,V2,V3];
+    label = [ones(Nsample,1);2*ones(Nsample,1);3*ones(Nsample,1)];
+    y3 = pca(V,"NumComponents",2);
+    
+    gscatter(y3(:,1),y3(:,2),label,"rkgb",'.',[16 16 16])
+      
+    legend('True Data', 'Data with Noise', 'Estimated Data')
+    xlabel('dim1')
+    ylabel('dim2')
+    title(['Liniarized PGA, Log-Euc, NSample=' num2str(Nsample) ', Mdim=' num2str(pMdim*3)])
+
+    subplot(2,3,6)
+    
+    [~,~,N] = size(S);
+    [~,V1] = levec(S,M);
+    
+    
+    [~,~,N] = size(Sr);
+    [~,V2] = levec(Sr,M);
+   
+    
+    [~,~,N] = size(LLAf);
+    [~,V3] = levec(LLAf,M);
+    
+    V = [V1,V2,V3];
+    label = [ones(Nsample,1);2*ones(Nsample,1);3*ones(Nsample,1)];
+    y3 = pca(V,"NumComponents",2);
+    
+    gscatter(y3(:,1),y3(:,2),label,"rkgb",'.',[16 16 16])
+      
+    legend('True Data', 'Data with Noise', 'Estimated Data')
+    xlabel('dim1')
+    ylabel('dim2')
+    title(['Liniarized PGA, Aff-Inv, NSample=' num2str(Nsample) ', Mdim=' num2str(pMdim*3)])
+    
+end
